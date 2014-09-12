@@ -1,0 +1,148 @@
+av=load('sample4.mfcc');                                %  loading the acoustic vector into a
+len_av=length(av);                                      %  length of total accoustic vectors
+no_of_win=((len_av-rem(len_av,25))/25);                 %  number of windows
+no_of_win_2=no_of_win-1;                                %  number of windows of double size
+win=zeros(no_of_win,25,13);                             %  array of windows 
+win_2=zeros(no_of_win_2,50,13);                         %  array of windows of double the size
+
+
+%  to create a array of windows which are of 5x13...........................
+dumv=zeros(25,13);                                       %  dummy vector which will help in transferring data into win
+for i=1:no_of_win
+    for j=1:25
+        dumv(j,:)=av((i-1).*25+j,:);
+    end
+    win(i,:,:)=dumv(:,:); 
+end
+
+%  to create a array of windows of double the size which are of 5x13........
+dumv_2=zeros(50,13);                                    %  dummy vector which will help in transferring data into win_2
+for i=1:no_of_win_2
+    for j=1:50
+        dumv_2(j,:)=av((i-1).*25+j,:);
+    end
+    win_2(i,:,:)=dumv_2(:,:); 
+end
+
+d_bic=zeros(1,no_of_win_2);
+
+lambda=2.3;
+d_1=zeros(50,13);
+d_2=zeros(25,13);
+d_3=zeros(25,13);
+
+for i=1:no_of_win_2
+    d_2(:,:)=win(i,:,:);
+    d_3(:,:)=win(i+1,:,:);
+    d_bic(i)=del_bic_2(d_2,d_3,lambda);
+end
+plot(d_bic);
+
+%X=zeros(1,87);
+%for i=1:87
+%X(i)=i;
+
+%end
+plot(d_bic);
+
+N=1;
+
+ch_poi_h=zeros(1,no_of_win_2);
+
+for i=1:no_of_win_2
+    if(d_bic(i)<0)
+        ch_poi_h(N)=i;
+        N=N+1;
+    end
+end
+M=0;
+i=1;
+
+while(ch_poi_h(i)~=0)
+    M=M+1;
+    i=i+1;
+end
+
+ch_poi=zeros(1,M);                                  %gives the id of the window where there is i'th change point
+for i=1:M                                           % M is the number of partitions
+    ch_poi(i)=ch_poi_h(i);
+end
+
+sp_pos=zeros(M+1,M+1,2);                            %position of start and end points of speaker in window id's
+
+sp_pos(1,1,1)=1;
+
+for i=1:M
+    sp_pos(i,1,2)=ch_poi(i);
+    sp_pos(i+1,1,1)=ch_poi(i)+1;
+end
+
+sp_pos(M+1,1,2)=length(win(:,:,:));
+    
+
+clu_h=zeros(M,M);                                   %gives the values of delbic between window at ith partition and window
+for i=1:M                                           %window at (jth partition) +1
+    for j=i+1:M
+        d_2(:,:)=win(ch_poi(i),:,:);
+        d_3(:,:)=win(ch_poi(j)+1,:,:);
+        clu_h(i,j)=del_bic_2(d_2,d_3,lambda);
+    end
+end
+
+
+for i=1:M+1
+    k=2;
+    for j=i+1:M-1
+        if(clu_h(i,j)>0)
+            if(sp_pos(i,1,1)~=0)
+                sp_pos(i,k,1)=ch_poi(j)+1;
+                sp_pos(i,k,2)=ch_poi(j+1);
+            end
+            sp_pos(j+1,1,1)=0;
+            sp_pos(j+1,1,2)=0;
+            k=k+1;
+        end
+    end
+end
+
+
+speaker_positions=zeros(M+1,M+1,2);
+
+for i=1:M+1
+    for j=1:M+1
+        if(sp_pos(i,j,1)~=0)
+         %   speaker_positions(i,j,1)=1;
+            speaker_positions(i,j,1)=(sp_pos(i,j,1)-1).*24000;
+        end
+        if(sp_pos(i,j,2)~=0)
+         %   speaker_positions(i,j,1)=1;
+            speaker_positions(i,j,2)=(sp_pos(i,j,2)-1).*24000;
+        end
+    end
+end
+
+p=1;
+spk_cluster=zeros(M+1,2.*(M+1));
+for i=1:M+1
+    p=1;
+    for j=1:M+1
+        spk_cluster(i,p)=speaker_positions(i,j,1);
+        spk_cluster(i,p+1)=speaker_positions(i,j,2);
+        p=p+2;
+    end
+end
+
+spk_cluster(1,1)=spk_cluster(1,1)+1;
+au=wavread('sample4.wav');
+player=audioplayer(au,48000);
+
+playblocking(player,[spk_cluster(1,1) spk_cluster(i,)]);
+playblocking(player,[spk_cluster(1,1) spk_cluster(1,2)]);
+    playblocking(player,[spk_cluster(1,3) spk_cluster(1,4)]);
+    playblocking(player,[spk_cluster(1,5) spk_cluster(1,6)]);
+    playblocking(player,[spk_cluster(1,7) spk_cluster(1,8)]);
+    playblocking(player,[spk_cluster(1,9) spk_cluster(1,10)]);
+    playblocking(player,[spk_cluster(1,11) spk_cluster(1,12)]);
+    playblocking(player,[spk_cluster(1,13) spk_cluster(1,14)]);
+    playblocking(player,[spk_cluster(1,15) spk_cluster(1,16)]);
+    %}

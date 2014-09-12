@@ -1,0 +1,21 @@
+% Read the wave using matlab
+
+[s,fs] = wavread('awb_1.wav');
+
+
+% pass the parameters "no_of_coefficients" , "s" , "fs" 
+
+Coefficients_Matrix = kannumfcc(13,s,fs);
+
+
+% Do Mean Normalization after getting the coefficients for better results and efficiency;
+
+
+% Subtract mean of the respective column from each sample and divide by standard deviation of the column;  
+
+for i=1:length(Coefficients_Matrix) 
+	Coefficients_Matrix(i,:) = (Coefficients_Matrix(i,:) - mean(Coefficients_Matrix(i,:)) / std(Coefficents_Matrix(i,:) ; 
+end
+
+
+% *** You need to remove the serial numbers of every line from the code of "standard Matlab Toolkit MFCC" to work properly.
